@@ -1,34 +1,11 @@
-import Link from "next/link";
+"use client";
+
+import { NavBar } from "@/components/navbar";
 
 export default function Blog() {
   return (
     <div className="min-h-screen bg-[#fff9f0] dark:bg-[#1d1917] text-[#2b2926] dark:text-[#e8e6e3] font-mono relative">
-      <nav className="sticky top-0 border-b border-[#2b2926]/20 dark:border-[#e8e6e3]/20 bg-[#fff9f0]/80 dark:bg-[#1d1917]/80 backdrop-blur-sm z-10">
-        <div className="max-w-2xl mx-auto px-6 py-4">
-          <ul className="flex gap-6">
-            <li>
-              <Link href="/" className="hover:text-[#d95e32] dark:hover:text-[#ff7f50] transition-colors">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link href="/blog" className="hover:text-[#d95e32] dark:hover:text-[#ff7f50] transition-colors">
-                Blog
-              </Link>
-            </li>
-            <li>
-              <a 
-                href="https://music.apple.com/us/artist/kyle-pitzen/1578800150" 
-                className="hover:text-[#d95e32] dark:hover:text-[#ff7f50] transition-colors"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Music
-              </a>
-            </li>
-          </ul>
-        </div>
-      </nav>
+      <NavBar />
 
       <main className="max-w-2xl mx-auto px-6 py-20 relative">
         <div className="mb-16 border-b border-[#2b2926]/20 dark:border-[#e8e6e3]/20 pb-12">
