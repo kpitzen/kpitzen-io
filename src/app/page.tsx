@@ -89,7 +89,7 @@ export default function Home() {
               <li>Pulumi &#40;parts of it&#41;</li>
               <li className="group relative">
                 This delicious meal
-                <div className="absolute hidden group-hover:block left-0 -top-32 z-10">
+                <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out left-0 bottom-8 z-10">
                   <Image 
                     src={meal}
                     alt="an image of red-wine braised short-ribs" 
