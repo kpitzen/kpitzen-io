@@ -15,6 +15,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Kyle Pitzen",
   description: "A space for thoughts and reflections",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+    shortcut: "/favicon-96x96.png",
+  }
 };
 
 export default function RootLayout({
