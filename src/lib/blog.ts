@@ -33,6 +33,7 @@ export async function getAllPosts() {
         date: data.date,
         excerpt: data.excerpt || "",
         content: content || "",
+        tags: data.tags || [],
       };
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

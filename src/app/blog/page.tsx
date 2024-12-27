@@ -1,12 +1,33 @@
 import { NavBar } from "@/components/navbar";
 import { getAllPosts } from "@/lib/blog";
 import Link from "next/link";
-import { BlogPost } from "@/types";
 import { Footer } from "@/components/footer";
+import { TagFilter } from "@/components/TagFilter";
+import { Suspense } from "react";
 
-// Change to async function to fetch posts
-export default async function Blog() {
+interface BlogPageProps {
+  searchParams: Promise<{ tags?: string | string[] }>
+}
+
+export default async function Blog(params: BlogPageProps) {
   const posts = await getAllPosts();
+  const { searchParams } = params;
+  const { tags } = await searchParams;
+  const selectedTags = Array.isArray(tags) 
+    ? tags 
+    : tags 
+      ? [tags]
+      : [];
+
+  // Extract unique tags from all posts
+  const allTags = Array.from(
+    new Set(posts.flatMap((post) => post.tags))
+  ).sort();
+
+  const filteredPosts = posts.filter((post) =>
+    selectedTags.length === 0 || 
+    selectedTags.some((tag) => post.tags.includes(tag))
+  );
 
   return (
     <div className="min-h-screen bg-[#fff9f0] dark:bg-[#1d1917] text-[#2b2926] dark:text-[#e8e6e3] font-mono relative">
@@ -21,15 +42,20 @@ export default async function Blog() {
           <p className="text-lg leading-relaxed">
             Thoughts on software engineering, mathematics, music, and other interesting things.
           </p>
-          <br/>
-          <p className="text-lg leading-relaxed">
-            While software engineering is my main focus here, I&apos;ll also explore various other fascinating topics that catch my interest along the way.
-          </p>
         </div>
 
+        <Suspense fallback={<div>Loading tags...</div>}>
+          {allTags.length > 0 && (
+            <TagFilter
+              tags={allTags}
+              selectedTags={selectedTags}
+            />
+          )}
+        </Suspense>
+
         <div className="space-y-12">
-          {posts.length > 0 ? (
-            posts.map((post: BlogPost) => (
+          {filteredPosts.length > 0 ? (
+            filteredPosts.map((post) => (
               <Link 
                 href={`/blog/posts/${post.slug}`} 
                 key={post.slug}
@@ -41,6 +67,18 @@ export default async function Blog() {
                 <div className="text-sm text-[#2b2926]/70 dark:text-[#e8e6e3]/70 mb-3">
                   {new Date(post.date).toLocaleDateString()}
                 </div>
+                {post.tags.length > 0 && (
+                  <div className="flex gap-2 mb-3">
+                    {post.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-2 py-1 rounded-full text-xs bg-[#2b2926]/10 dark:bg-[#e8e6e3]/10"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <p className="text-lg leading-relaxed">
                   {post.excerpt}
                 </p>
@@ -49,10 +87,12 @@ export default async function Blog() {
           ) : (
             <section className="p-6 rounded-lg bg-white/50 dark:bg-black/10 backdrop-blur-sm">
               <h2 className="text-2xl font-bold mb-5 text-[#d95e32] dark:text-[#ff7f50]">
-                Coming Soon
+                No posts found
               </h2>
               <p className="text-lg leading-relaxed">
-                Blog posts are currently being written. Check back soon!
+                {posts.length === 0 
+                  ? "Blog posts are currently being written. Check back soon!"
+                  : "No posts match the selected tags. Try selecting different tags."}
               </p>
             </section>
           )}
