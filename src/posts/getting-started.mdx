@@ -1,0 +1,144 @@
+---
+title: "How I made this site"
+date: "2024-12-28T00:00:00-06:00"
+excerpt: "A new year's resolution"
+---
+
+As someone working in tech, I regularly feel pulled between a few different axes:
+
+- **Productivity vs. Fulfillment**: I want to be a productive person, but I really enjoy spending time carefully crafting good things.
+- **Detail vs. Abstraction**: I get a great deal of satisfaction by deeply understanding the internals of my work, but it's easy to lose sight of the bigger picture.
+- **Passion vs. Practicality**: I want to work on things that I'm passionate about, but I also need to make a living, and have chosen to live in one of the most expensive cities in the world.
+
+This post, and to a lesser extent the entire site, is mostly about the first of these. I think a lot about craftsmanship - products like Simone Giertz's [Every Day Goal Calendar](https://yetch.store/products/every-day-goal-calendar?srsltid=AfmBOoqjagAEULBCbEMVyeQbSfWRoklvqfMNHC3v3aCo0NMMn_HBniw2)
+and everything made by [teenage engineering](https://teenage.engineering/) and [Gamechanger Audio](https://gamechangeraudio.com/) have these lovingly thought out
+human interfaces that make me appreciate the thought and care that went into their creation. I love trying to make things like this, as well.
+
+In a lot of cases, unfortunately, this mindset is fundamentally incompatible with the incentive structures of technology in our economy. Every product is a race to market,
+and the only way to win that race is to ship first. Whether that's a new product, a new feature, a new hype wave, or whatever else is driving the market today. I've tried my
+best to resist this impulse, but often we're so beholden to clients, leadership, and institutional momentum that it's easier to shrug our shoulders and get on with the work.
+
+As much of a luddite as I often find myself to be, and as much as I've hesitated to embrace the new world of LLMs and AI, the announcement of GPT-3's capabilities made it abundantly
+clear to me that these things are likely here to stay, and the only way to survive in this industry is to continue to adapt (as anyone still in tech has already had to do for decades).
+
+To that end, I've decided to lean heavily into LLMs and other AI-assisted workflows both to build this site and to carry out my day-to-day work at Substrate. It's clear to me now that
+these tools are not only the future, but the present, and it's well past time to get on board. To my surprise, so far I've found the nature of this work
+to be far more creatively fulfilling than I expected. I've spent much more of my time thinking about what I _want_ to do, rather than how exactly to do it, and solving
+actually interesting problems rather than defining interfaces, writing documentation, unit tests, and the other busywork that previously occupied my days.
+
+This site, so far anyway, has been almost entirely written by LLMs. From a code perspective, of course. The blog post(s) you're reading are entirely my own, in my own voice,
+but the Next.js codebase, the Tailwind CSS, the Markdown parsing, and the entire site is the result of a lot of work by LLMs. I simply ran `npx create-next-app@latest`,
+followed the defaults (because any kind of web engineering these days ought to be done in TypeScript), and opened up [Cursor](https://www.cursor.com/) to help me write the code.
+This has allowed me to focus on the things I actually wanted to focus on - making the site look nice, making it easy to navigate, adding little flights of whimsy and fun, 
+and making it very easy to write posts like this. 
+
+For example, just this morning I realized I wanted to be able to navigate between blog posts using the keyboard. I'm not at all familiar with browser APIs or Next navigation, but I asked
+Cursor (really, Claude Sonnet) to help me write the code. I gave it a description of what I wanted, and it wrote the code for me. It generated a new navigation component, put it in the components/ directory,
+added a keyboard navigation hook, placed it in the hooks/ directory, and correctly wired it all together. The navigation ended up being backwards at first, but as soon as I pointed that out,
+Claude + Cursor happily resolved the issue for me. I'll include the code for the component and hook at the end of this post. Similarly, the initial design of the site felt pretty cold, as it was the standard Next.js boilerplate page. I asked Claude to make it more cozy,
+which resulted in this nice warm color palette, rounded corners, and warm hover states.
+
+Ultimately, I think some thoughts we should all keep in mind as we navigate this new space is that we are people building things for other people. We should care about them and their experiences
+as we care about our own, and we should try to inject as much humanity into our work and our products as possible. Real connections are becoming increasingly difficult these days, and it's so important to 
+cultivate them.
+
+I still love writing code by hand, and I'm very excited to continue working on fun little projects, but I think most of the code I open PRs with in the future will have in some way been shaped by LLMs.
+
+
+---
+
+### Code for the navigation component and hook:
+
+```TypeScript
+'use client';
+
+import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
+import Link from 'next/link';
+
+interface BlogPostNavigationProps {
+  nextPost: { slug: string; title: string } | null;
+  prevPost: { slug: string; title: string } | null;
+}
+
+export function BlogPostNavigation({ nextPost, prevPost }: BlogPostNavigationProps) {
+  useKeyboardNavigation({
+    nextPostSlug: nextPost?.slug,
+    prevPostSlug: prevPost?.slug,
+  });
+
+  return (
+    <nav className="mt-12 pt-8 border-t border-[#2b2926]/20 dark:border-[#e8e6e3]/20 flex justify-between">
+      {nextPost ? (
+        <Link 
+          href={`/blog/posts/${nextPost.slug}`}
+          className="group flex flex-col"
+        >
+          <span className="text-sm text-[#2b2926]/70 dark:text-[#e8e6e3]/70">Previous</span>
+          <span className="text-[#d95e32] dark:text-[#ff7f50] group-hover:underline">{nextPost.title}</span>
+        </Link>
+      ) : <div />}
+      
+      {prevPost ? (
+        <Link 
+          href={`/blog/posts/${prevPost.slug}`}
+          className="group flex flex-col text-right"
+        >
+          <span className="text-sm text-[#2b2926]/70 dark:text-[#e8e6e3]/70">Next</span>
+          <span className="text-[#d95e32] dark:text-[#ff7f50] group-hover:underline">{prevPost.title}</span>
+        </Link>
+      ) : <div />}
+    </nav>
+  );
+} 
+```
+
+```TypeScript
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+interface UseKeyboardNavigationProps {
+  nextPostSlug?: string;
+  prevPostSlug?: string;
+}
+
+export function useKeyboardNavigation({
+  nextPostSlug,
+  prevPostSlug,
+}: UseKeyboardNavigationProps) {
+  const router = useRouter();
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      // Ignore if user is typing in an input or textarea
+      if (event.target instanceof HTMLElement) {
+        if (
+          ["input", "textarea"].includes(event.target.tagName.toLowerCase())
+        ) {
+          return;
+        }
+      }
+
+      switch (event.key) {
+        case "ArrowLeft":
+          if (nextPostSlug) {
+            router.push(`/blog/posts/${nextPostSlug}`);
+          }
+          break;
+        case "ArrowRight":
+          if (prevPostSlug) {
+            router.push(`/blog/posts/${prevPostSlug}`);
+          }
+          break;
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [router, nextPostSlug, prevPostSlug]);
+}
+```
+
+
+

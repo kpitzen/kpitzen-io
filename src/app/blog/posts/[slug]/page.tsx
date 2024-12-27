@@ -1,7 +1,6 @@
 import { NavBar } from "@/components/navbar";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import 'prismjs/themes/prism-tomorrow.css';
 import { Footer } from "@/components/footer";
 import { refractor } from "refractor";
@@ -16,6 +15,7 @@ import rust from "refractor/lang/rust";
 import python from "refractor/lang/python";
 import cpp from "refractor/lang/cpp";
 import go from "refractor/lang/go";
+import { BlogPostNavigation } from '@/components/BlogPostNavigation';
 
 refractor.register(typescript);
 refractor.register(tsx);
@@ -63,10 +63,9 @@ export default async function BlogPost({
   const nextPost = currentPostIndex < posts.length - 1 ? posts[currentPostIndex + 1] : null;
 
   return (
-    <div className="min-h-screen bg-[#fff9f0] dark:bg-[#1d1917] text-[#2b2926] dark:text-[#e8e6e3] font-mono relative">
+    <div className="min-h-screen bg-[#fff9f0] dark:bg-[#1d1917] text-[#2b2926] dark:text-[#e8e6e3] font-mono">
       <NavBar />
-
-      <main className="max-w-2xl mx-auto px-6 py-12 sm:py-20">
+      <main className="max-w-2xl mx-auto px-6 py-20">
         <article>
           <h1 className="text-3xl sm:text-4xl font-bold mb-4 text-[#d95e32] dark:text-[#ff7f50]">{post.title}</h1>
           <div className="text-sm text-[#2b2926]/70 dark:text-[#e8e6e3]/70 mb-8">
@@ -77,28 +76,8 @@ export default async function BlogPost({
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
         </article>
-
-        <nav className="mt-12 pt-8 border-t border-[#2b2926]/20 dark:border-[#e8e6e3]/20 flex justify-between">
-          {nextPost ? (
-            <Link 
-              href={`/blog/posts/${nextPost.slug}`}
-              className="group flex flex-col"
-            >
-              <span className="text-sm text-[#2b2926]/70 dark:text-[#e8e6e3]/70">Previous</span>
-              <span className="text-[#d95e32] dark:text-[#ff7f50] group-hover:underline">{nextPost.title}</span>
-            </Link>
-          ) : <div />}
-          
-          {prevPost ? (
-            <Link 
-              href={`/blog/posts/${prevPost.slug}`}
-              className="group flex flex-col text-right"
-            >
-              <span className="text-sm text-[#2b2926]/70 dark:text-[#e8e6e3]/70">Next</span>
-              <span className="text-[#d95e32] dark:text-[#ff7f50] group-hover:underline">{prevPost.title}</span>
-            </Link>
-          ) : <div />}
-        </nav>
+        
+        <BlogPostNavigation nextPost={nextPost} prevPost={prevPost} />
       </main>
       <Footer />
     </div>

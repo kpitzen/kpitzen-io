@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGithub } from "@fortawesome/free-brands-svg-icons";
-import { faEnvelope, faCloud } from "@fortawesome/free-solid-svg-icons";
+import { faEnvelope, faBug } from "@fortawesome/free-solid-svg-icons";
 
 export function Footer() {
   return (
@@ -23,7 +23,7 @@ export function Footer() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <FontAwesomeIcon icon={faCloud} /> Bluesky
+          <FontAwesomeIcon icon={faBug} /> Bluesky
         </a>
         <a 
           href="mailto:kyle@kpitzen.io" 

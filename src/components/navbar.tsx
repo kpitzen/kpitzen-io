@@ -4,7 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 // Constants to avoid repetition
-const NAV_ITEMS = [
+interface NavItem {
+  href: string;
+  label: string;
+  external?: boolean;
+}
+
+const NAV_ITEMS: NavItem[] = [
   { href: '/', label: 'Home' },
   { href: '/blog', label: 'Blog' },
   { 
