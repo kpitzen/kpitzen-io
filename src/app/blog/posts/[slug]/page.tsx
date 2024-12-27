@@ -3,7 +3,7 @@ import { getAllPosts, getPostBySlug } from "@/lib/blog";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import 'prismjs/themes/prism-tomorrow.css';
-
+import { Footer } from "@/components/footer";
 import { refractor } from "refractor";
 import typescript from "refractor/lang/typescript";
 import tsx from "refractor/lang/tsx";
@@ -100,6 +100,7 @@ export default async function BlogPost({
           ) : <div />}
         </nav>
       </main>
+      <Footer />
     </div>
   );
 }

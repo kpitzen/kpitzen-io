@@ -2,6 +2,7 @@ import { NavBar } from "@/components/navbar";
 import { getAllPosts } from "@/lib/blog";
 import Link from "next/link";
 import { BlogPost } from "@/types";
+import { Footer } from "@/components/footer";
 
 // Change to async function to fetch posts
 export default async function Blog() {
@@ -57,6 +58,7 @@ export default async function Blog() {
           )}
         </div>
       </main>
+      <Footer />
     </div>
   );
 }
