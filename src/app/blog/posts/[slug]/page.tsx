@@ -1,6 +1,7 @@
 import { NavBar } from "@/components/navbar";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import 'prismjs/themes/prism-tomorrow.css';
 
 import { refractor } from "refractor";
@@ -50,11 +51,16 @@ export default async function BlogPost({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const posts = await getAllPosts();
+  const currentPostIndex = posts.findIndex(post => post.slug === slug);
   const post = await getPostBySlug(slug);
 
   if (!post) {
     notFound();
   }
+
+  const prevPost = currentPostIndex > 0 ? posts[currentPostIndex - 1] : null;
+  const nextPost = currentPostIndex < posts.length - 1 ? posts[currentPostIndex + 1] : null;
 
   return (
     <div className="min-h-screen bg-[#fff9f0] dark:bg-[#1d1917] text-[#2b2926] dark:text-[#e8e6e3] font-mono relative">
@@ -71,7 +77,29 @@ export default async function BlogPost({
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
         </article>
+
+        <nav className="mt-12 pt-8 border-t border-[#2b2926]/20 dark:border-[#e8e6e3]/20 flex justify-between">
+          {nextPost ? (
+            <Link 
+              href={`/blog/posts/${nextPost.slug}`}
+              className="group flex flex-col"
+            >
+              <span className="text-sm text-[#2b2926]/70 dark:text-[#e8e6e3]/70">Previous</span>
+              <span className="text-[#d95e32] dark:text-[#ff7f50] group-hover:underline">{nextPost.title}</span>
+            </Link>
+          ) : <div />}
+          
+          {prevPost ? (
+            <Link 
+              href={`/blog/posts/${prevPost.slug}`}
+              className="group flex flex-col text-right"
+            >
+              <span className="text-sm text-[#2b2926]/70 dark:text-[#e8e6e3]/70">Next</span>
+              <span className="text-[#d95e32] dark:text-[#ff7f50] group-hover:underline">{prevPost.title}</span>
+            </Link>
+          ) : <div />}
+        </nav>
       </main>
     </div>
   );
-} 
+}
