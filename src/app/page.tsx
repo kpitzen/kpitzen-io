@@ -66,7 +66,7 @@ export default function Home() {
             </h2>
             <ul className="list-disc list-inside space-y-3 ml-2">
               <li>Substrate</li>
-              <li>Pulumi &#40;contributed to&#41;</li>
+              <li>Pulumi &#40;in parts - including Pulumi AI&#41;</li>
               <li className="group relative">
                 This delicious meal
                 <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out left-0 bottom-8 z-10">
