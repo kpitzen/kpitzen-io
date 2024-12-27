@@ -1,9 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["prismjs"],
-  webpack: (config) => {
-    return config;
+  experimental: {
+    turbo: {
+      rules: {
+        // Configure any specific rules here
+      },
+    },
   },
 };
 
