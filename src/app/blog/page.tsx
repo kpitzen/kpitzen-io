@@ -1,8 +1,12 @@
-"use client";
-
 import { NavBar } from "@/components/navbar";
+import { getAllPosts } from "@/lib/blog";
+import Link from "next/link";
+import { BlogPost } from "@/types";
 
-export default function Blog() {
+// Change to async function to fetch posts
+export default async function Blog() {
+  const posts = await getAllPosts();
+
   return (
     <div className="min-h-screen bg-[#fff9f0] dark:bg-[#1d1917] text-[#2b2926] dark:text-[#e8e6e3] font-mono relative">
       <NavBar />
@@ -18,20 +22,39 @@ export default function Blog() {
           </p>
           <br/>
           <p className="text-lg leading-relaxed">
-            This space will largely be used to share my thoughts and experiences as a software engineer, but will also contain meandering thoughts on a variety of other topics I find interesting.
+            While software engineering is my main focus here, I&apos;ll also explore various other fascinating topics that catch my interest along the way.
           </p>
         </div>
 
         <div className="space-y-12">
-          {/* Blog posts will be listed here */}
-          <section className="p-6 rounded-lg bg-white/50 dark:bg-black/10 backdrop-blur-sm">
-            <h2 className="text-2xl font-bold mb-5 text-[#d95e32] dark:text-[#ff7f50]">
-              Coming Soon
-            </h2>
-            <p className="text-lg leading-relaxed">
-              Blog posts are currently being written. Check back soon!
-            </p>
-          </section>
+          {posts.length > 0 ? (
+            posts.map((post: BlogPost) => (
+              <Link 
+                href={`/blog/posts/${post.slug}`} 
+                key={post.slug}
+                className="block p-6 rounded-lg bg-white/50 dark:bg-black/10 backdrop-blur-sm hover:bg-white/70 dark:hover:bg-black/20 transition-colors"
+              >
+                <h2 className="text-2xl font-bold mb-2 text-[#d95e32] dark:text-[#ff7f50]">
+                  {post.title}
+                </h2>
+                <div className="text-sm text-[#2b2926]/70 dark:text-[#e8e6e3]/70 mb-3">
+                  {new Date(post.date).toLocaleDateString()}
+                </div>
+                <p className="text-lg leading-relaxed">
+                  {post.excerpt}
+                </p>
+              </Link>
+            ))
+          ) : (
+            <section className="p-6 rounded-lg bg-white/50 dark:bg-black/10 backdrop-blur-sm">
+              <h2 className="text-2xl font-bold mb-5 text-[#d95e32] dark:text-[#ff7f50]">
+                Coming Soon
+              </h2>
+              <p className="text-lg leading-relaxed">
+                Blog posts are currently being written. Check back soon!
+              </p>
+            </section>
+          )}
         </div>
       </main>
     </div>

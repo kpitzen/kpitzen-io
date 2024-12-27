@@ -1,9 +1,8 @@
-"use client";
-
 import Image from "next/image";
 import windmill from "@/images/windmill.png";
 import meal from "@/images/christmas-ribs.jpg";
 import { NavBar } from "@/components/navbar";
+
 
 export default function Home() {
   return (
@@ -26,8 +25,8 @@ export default function Home() {
         <div className="mb-16 border-b border-[#2b2926]/20 dark:border-[#e8e6e3]/20 pb-12">
           <h1 className="text-4xl mb-6 font-bold tracking-tight">Hello! 👋</h1>
           <p className="text-lg leading-relaxed">
-            I&apos;m Kyle Pitzen, a software engineer, mathematician, and musician.
-            I like working on things of all sizes that emphasize the human experience, and bring the beauty of human connectedness to each other.
+            I&apos;m Kyle Pitzen, wearing multiple hats as a software engineer, mathematician, and musician.
+            My passion lies in crafting experiences that celebrate human connection and bring out the beauty in how we interact with technology and each other.
           </p>
         </div>
 
@@ -49,22 +48,20 @@ export default function Home() {
               What I Like
             </h2>
             <ul className="list-disc list-inside space-y-3 ml-2">
-              <li>Human-oriented software</li>
-              <li>Thoughtfully designed hardware</li>
-              <li>Long conversations with interesting people</li>
-              <li>Really good food</li>
-              <li>Really good coffee</li>
-
+              <li>Software that puts people first</li>
+              <li>Elegant hardware solutions</li>
+              <li>Deep conversations with curious minds</li>
+              <li>Exceptional food and coffee</li>
             </ul>
           </section>
 
           <section>
             <h2 className="text-2xl font-bold mb-5 text-[#d95e32] dark:text-[#ff7f50]">
-              Things I&apos;ve Made
+              Things I&apos;ve Built
             </h2>
             <ul className="list-disc list-inside space-y-3 ml-2">
               <li>Substrate</li>
-              <li>Pulumi &#40;parts of it&#41;</li>
+              <li>Pulumi &#40;contributed to&#41;</li>
               <li className="group relative">
                 This delicious meal
                 <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out left-0 bottom-8 z-10">
