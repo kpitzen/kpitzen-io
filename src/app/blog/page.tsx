@@ -12,7 +12,7 @@ export default async function Blog() {
     <div className="min-h-screen bg-[#fff9f0] dark:bg-[#1d1917] text-[#2b2926] dark:text-[#e8e6e3] font-mono relative">
       <NavBar />
 
-      <main className="max-w-2xl mx-auto px-6 py-20 relative">
+      <main className="max-w-3xl mx-auto px-6 py-20 relative">
         <div className="mb-16 border-b border-[#2b2926]/20 dark:border-[#e8e6e3]/20 pb-12">
           <h1 className="text-4xl mb-3 font-bold tracking-tight">Blog</h1>
           <p className="text-lg text-[#2b2926]/70 dark:text-[#e8e6e3]/70 mb-6">

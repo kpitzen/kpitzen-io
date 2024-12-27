@@ -25,7 +25,7 @@ export function NavBar() {
   
   return (
     <nav className="sticky top-0 border-b border-[#2b2926]/20 dark:border-[#e8e6e3]/20 bg-[#fff9f0]/80 dark:bg-[#1d1917]/80 backdrop-blur-sm z-10">
-      <div className="max-w-2xl mx-auto px-6 py-4">
+      <div className="max-w-3xl mx-auto px-6 py-4">
         <ul className="flex gap-6">
           {NAV_ITEMS.map(({ href, label, external }) => (
             <li key={href}>

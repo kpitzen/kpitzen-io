@@ -65,14 +65,14 @@ export default async function BlogPost({
   return (
     <div className="min-h-screen bg-[#fff9f0] dark:bg-[#1d1917] text-[#2b2926] dark:text-[#e8e6e3] font-mono">
       <NavBar />
-      <main className="max-w-2xl mx-auto px-6 py-20">
+      <main className="max-w-3xl mx-auto px-6 py-20">
         <article>
           <h1 className="text-3xl sm:text-4xl font-bold mb-4 text-[#d95e32] dark:text-[#ff7f50]">{post.title}</h1>
           <div className="text-sm text-[#2b2926]/70 dark:text-[#e8e6e3]/70 mb-8">
             {new Date(post.date).toLocaleDateString()}
           </div>
           <div 
-            className="prose dark:prose-invert prose-lg max-w-none prose-headings:text-[#d95e32] dark:prose-headings:text-[#ff7f50] prose-a:text-[#d95e32] dark:prose-a:text-[#ff7f50] prose-img:rounded-lg prose-p:leading-relaxed prose-pre:bg-[#2b2926] dark:prose-pre:bg-black/40 prose-pre:p-4"
+            className="prose dark:prose-invert prose-lg max-w-3xl prose-headings:text-[#d95e32] dark:prose-headings:text-[#ff7f50] prose-a:text-[#d95e32] dark:prose-a:text-[#ff7f50] prose-img:rounded-lg prose-p:leading-relaxed prose-pre:bg-[#2b2926] dark:prose-pre:bg-black/40 prose-pre:p-4"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
         </article>

@@ -25,7 +25,7 @@ export default function Home() {
 
       <NavBar />
       
-      <main className="max-w-2xl mx-auto px-6 py-20 relative">
+      <main className="max-w-3xl mx-auto px-6 py-20 relative">
         {/* Softer border and increased spacing */}
         <div className="mb-16 border-b border-[#2b2926]/20 dark:border-[#e8e6e3]/20 pb-12">
           <h1 className="text-4xl mb-6 font-bold tracking-tight">Hello! 👋</h1>

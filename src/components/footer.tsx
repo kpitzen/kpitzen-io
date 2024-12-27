@@ -4,7 +4,7 @@ import { faEnvelope, faBug } from "@fortawesome/free-solid-svg-icons";
 
 export function Footer() {
   return (
-    <footer className="max-w-2xl mx-auto px-6 py-12 border-t border-[#2b2926]/20 dark:border-[#e8e6e3]/20">
+    <footer className="max-w-3xl mx-auto px-6 py-12 border-t border-[#2b2926]/20 dark:border-[#e8e6e3]/20">
       <h2 className="text-2xl font-bold mb-5 text-[#2b7d6c] dark:text-[#4fd1b8]">
         Let&apos;s Connect
       </h2>
