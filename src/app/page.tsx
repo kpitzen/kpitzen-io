@@ -1,7 +1,3 @@
-import '@fortawesome/fontawesome-svg-core/styles.css'
-import { config } from '@fortawesome/fontawesome-svg-core'
-config.autoAddCss = false // Tell Font Awesome to skip adding CSS automatically since it's being imported above
-
 import Image from "next/image";
 import windmill from "@/images/windmill.png";
 import meal from "@/images/christmas-ribs.jpg";
