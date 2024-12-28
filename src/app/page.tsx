@@ -1,6 +1,5 @@
 import Image from "next/image";
 import windmill from "@/images/windmill.png";
-import meal from "@/images/christmas-ribs.jpg";
 import { NavBar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { RecentBlogPost } from "@/components/RecentBlogPost";
@@ -71,16 +70,6 @@ export default async function Home() {
             <ul className="list-disc list-inside space-y-3 ml-2">
               <li>Substrate</li>
               <li>Pulumi &#40;in parts - including Pulumi AI&#41;</li>
-              <li className="group relative">
-                This delicious meal
-                <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out left-0 bottom-8 z-10">
-                  <Image 
-                    src={meal}
-                    alt="an image of red-wine braised short-ribs" 
-                    className="rounded-lg shadow-lg w-48 h-48 object-cover"
-                  />
-                </div>
-              </li>
               <li className="group relative">
                 <a 
                   href="https://github.com/kpitzen/kpitzen-io" 
