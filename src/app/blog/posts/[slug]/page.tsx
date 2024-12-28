@@ -16,6 +16,8 @@ import python from "refractor/lang/python";
 import cpp from "refractor/lang/cpp";
 import go from "refractor/lang/go";
 import { BlogPostNavigation } from '@/components/BlogPostNavigation';
+import { Metadata } from 'next';
+import { BlogPostSchema } from '@/components/BlogPostSchema';
 
 refractor.register(typescript);
 refractor.register(tsx);
@@ -45,6 +47,47 @@ interface BlogPost {
   content: string;
 }
 
+// Add generateMetadata function
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await getPostBySlug(slug);
+  
+  if (!post) {
+    return {
+      title: 'Post Not Found',
+    };
+  }
+
+  const ogImage = post.ogImage || '/images/default-og.png'; // Create a default OG image
+
+  return {
+    title: post.title,
+    description: post.description,
+    openGraph: {
+      title: post.title,
+      description: post.description,
+      type: 'article',
+      publishedTime: post.date,
+      authors: ['Kyle Pitzen'],
+      tags: post.tags,
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.description,
+      images: [ogImage],
+    },
+  };
+}
+
 export default async function BlogPost({
   params,
 }: {
@@ -64,6 +107,7 @@ export default async function BlogPost({
 
   return (
     <div className="min-h-screen bg-[#fff9f0] dark:bg-[#1d1917] text-[#2b2926] dark:text-[#e8e6e3] font-mono">
+      <BlogPostSchema post={post} />
       <NavBar />
       <main className="max-w-3xl mx-auto px-6 py-20">
         <article>

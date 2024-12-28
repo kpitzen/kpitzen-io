@@ -31,7 +31,7 @@ export async function getAllPosts() {
         slug: filename.replace(/\.mdx?$/, ""),
         title: data.title,
         date: data.date,
-        excerpt: data.excerpt || "",
+        description: data.description || "",
         content: content || "",
         tags: data.tags || [],
       };

@@ -60,7 +60,7 @@ export function BlogPosts({ posts, selectedTags }: BlogPostsProps) {
             </div>
           )}
           <p className="text-lg leading-relaxed">
-            {post.excerpt}
+            {post.description}
           </p>
         </Link>
       ))}
