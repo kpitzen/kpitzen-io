@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGithub } from "@fortawesome/free-brands-svg-icons";
-import { faEnvelope, faBug } from "@fortawesome/free-solid-svg-icons";
+import { faEnvelope, faBug, faRss } from "@fortawesome/free-solid-svg-icons";
 
 export function Footer() {
   return (
@@ -30,6 +30,14 @@ export function Footer() {
           className="px-5 py-2.5 rounded-md border-2 border-current hover:bg-[#2b2926] hover:text-[#fff9f0] dark:hover:bg-[#e8e6e3] dark:hover:text-[#1d1917] transition-all hover:scale-105 flex items-center gap-2"
         >
           <FontAwesomeIcon icon={faEnvelope} /> Email
+        </a>
+        <a 
+          href="/feed.xml" 
+          className="px-5 py-2.5 rounded-md border-2 border-current hover:bg-[#2b2926] hover:text-[#fff9f0] dark:hover:bg-[#e8e6e3] dark:hover:text-[#1d1917] transition-all hover:scale-105 flex items-center gap-2"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <FontAwesomeIcon icon={faRss} /> RSS Feed
         </a>
       </div>
       <div className="text-center mt-8 text-sm text-[#2b2926]/50 dark:text-[#e8e6e3]/50">

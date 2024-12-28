@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     siteName: 'Kyle Pitzen',
     images: [
       {
-        url: '/images/og-default.png',
+        url: '/images/default-og.png',
         width: 1200,
         height: 630,
       },
@@ -40,9 +40,14 @@ export const metadata: Metadata = {
     creator: '@kpitzen',
   },
   icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
-    shortcut: '/favicon-96x96.png',
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+    shortcut: "/favicon-96x96.png",
+  },
+  alternates: {
+    types: {
+      'application/rss+xml': 'https://kpitzen.io/feed.xml',
+    },
   },
 };
 
