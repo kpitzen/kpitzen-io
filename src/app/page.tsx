@@ -3,9 +3,15 @@ import windmill from "@/images/windmill.png";
 import meal from "@/images/christmas-ribs.jpg";
 import { NavBar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
+import { RecentBlogPost } from "@/components/RecentBlogPost";
+import { getAllPosts } from "@/lib/blog";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGithub } from "@fortawesome/free-brands-svg-icons";
 
+export default async function Home() {
+  const posts = await getAllPosts();
+  const mostRecentPost = posts[0]; // Posts are already sorted by date in getAllPosts
 
-export default function Home() {
   return (
     <div className="min-h-screen bg-[#fff9f0] dark:bg-[#1d1917] text-[#2b2926] dark:text-[#e8e6e3] font-mono relative">
       {/* Windmill image - adjusted opacity for softer feel */}
@@ -32,6 +38,8 @@ export default function Home() {
         </div>
 
         <div className="space-y-12">
+          {mostRecentPost && <RecentBlogPost post={mostRecentPost} />}
+          
           {/* Updated sections with softer spacing and rounded corners */}
           <section className="p-6 rounded-lg bg-white/50 dark:bg-black/10 backdrop-blur-sm">
             <h2 className="text-2xl font-bold mb-5 text-[#d95e32] dark:text-[#ff7f50]">
@@ -73,7 +81,37 @@ export default function Home() {
                   />
                 </div>
               </li>
-              <li>This website</li>
+              <li className="group relative">
+                <a 
+                  href="https://github.com/kpitzen/kpitzen-io" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-[#d95e32] dark:text-[#ff7f50] hover:underline"
+                >
+                  This website
+                </a>
+                <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out left-0 bottom-8 z-10">
+                  <div className="bg-white dark:bg-[#1d1917] p-4 rounded-lg shadow-lg border border-[#2b2926]/20 dark:border-[#e8e6e3]/20 w-64">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FontAwesomeIcon icon={faGithub} className="w-4 h-4" />
+                      <span className="font-semibold">kpitzen/kpitzen-io</span>
+                    </div>
+                    <p className="text-sm text-[#2b2926]/70 dark:text-[#e8e6e3]/70 mb-2">
+                      Personal website and blog built with Next.js
+                    </p>
+                    <div className="flex items-center gap-4 text-xs text-[#2b2926]/60 dark:text-[#e8e6e3]/60">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-[#3178c6]"></div>
+                        TypeScript
+                      </div>
+                      <div>
+                        <FontAwesomeIcon icon={["fas", "star"]} className="w-3 h-3 mr-1" />
+                        1
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
             </ul>
           </section>
         </div>
