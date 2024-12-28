@@ -37,7 +37,7 @@ export function Footer() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <FontAwesomeIcon icon={faRss} /> RSS Feed
+          <FontAwesomeIcon icon={faRss} /> RSS
         </a>
       </div>
       <div className="text-center mt-8 text-sm text-[#2b2926]/50 dark:text-[#e8e6e3]/50">
