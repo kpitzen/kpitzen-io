@@ -67,8 +67,8 @@ export default async function Home() {
               Things I&apos;ve Built
             </h2>
             <ul className="list-disc list-inside space-y-3 ml-2">
-              <li>Substrate</li>
-              <li>Pulumi &#40;in parts - including Pulumi AI&#41;</li>
+              <li><a href="https://www.substrate.run/" target="_blank" rel="noopener noreferrer" className="text-[#d95e32] dark:text-[#ff7f50] hover:underline">Substrate</a></li>
+              <li><a href="https://github.com/pulumi/pulumi/pulls?q=is%3Apr+is%3Aclosed+author%3Akpitzen" target="_blank" rel="noopener noreferrer" className="text-[#d95e32] dark:text-[#ff7f50] hover:underline">Pulumi &#40;in parts - including Pulumi AI&#41;</a></li>
               <GithubCard />
             </ul>
           </section>
