@@ -14,12 +14,12 @@ export async function GithubCard() {
         rel="noopener noreferrer"
         className="group inline-block text-[#d95e32] dark:text-[#ff7f50] hover:underline"
       >
-        This website
+        <span className="text-[#d95e32] dark:text-[#ff7f50] hover:underline">This website</span>
         <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out left-0 bottom-full mb-2 z-10 pointer-events-none">
           <div className="bg-white dark:bg-[#1d1917] p-4 rounded-lg shadow-lg border border-[#2b2926]/20 dark:border-[#e8e6e3]/20 w-64">
             <div className="flex items-center gap-2 mb-2">
-              <FontAwesomeIcon icon={faGithub} className="w-4 h-4" />
-              <span className="font-semibold">kpitzen/kpitzen-io</span>
+              <FontAwesomeIcon icon={faGithub} className="w-4 h-4 text-[#2b2926] dark:text-[#e8e6e3]" />
+              <span className="font-semibold text-[#2b2926] dark:text-[#e8e6e3]">kpitzen/kpitzen-io</span>
             </div>
             <p className="text-sm text-[#2b2926]/70 dark:text-[#e8e6e3]/70 mb-2">
               Personal website and blog built with Next.js
