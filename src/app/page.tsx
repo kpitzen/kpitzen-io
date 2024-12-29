@@ -7,8 +7,8 @@ import { getAllPosts } from "@/lib/blog";
 import { GithubCard } from "@/components/GithubCard";
 
 export default async function Home() {
-  const posts = await getAllPosts();
-  const mostRecentPost = posts[0]; // Posts are already sorted by date in getAllPosts
+  const { posts } = await getAllPosts();
+  const mostRecentPost = posts[0];
 
   return (
     <div className="min-h-screen bg-[#fff9f0] dark:bg-[#1d1917] text-[#2b2926] dark:text-[#e8e6e3] font-mono relative">

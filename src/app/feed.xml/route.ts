@@ -2,7 +2,7 @@ import { getAllPosts } from "@/lib/blog";
 import { BlogPost } from "@/types";
 
 export async function GET() {
-  const posts = await getAllPosts();
+  const { posts } = await getAllPosts();
   const baseUrl = "https://kpitzen.io";
 
   const rss = generateRSS(posts, baseUrl);

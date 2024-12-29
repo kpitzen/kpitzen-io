@@ -12,15 +12,14 @@ import rehypeRaw from "rehype-raw";
 import rehypeStringify from "rehype-stringify";
 
 const postsDirectory = path.join(process.cwd(), "src/posts");
-export async function getAllPosts() {
-  // Ensure the posts directory exists
+export async function getAllPosts(page: number = 1, limit: number = 5) {
   if (!fs.existsSync(postsDirectory)) {
-    return [];
+    return { posts: [], total: 0 };
   }
 
   const files = fs.readdirSync(postsDirectory);
 
-  const posts: BlogPost[] = files
+  const allPosts: BlogPost[] = files
     .filter((filename) => filename.endsWith(".mdx") || filename.endsWith(".md"))
     .map((filename) => {
       const filePath = path.join(postsDirectory, filename);
@@ -38,12 +37,18 @@ export async function getAllPosts() {
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  return posts;
+  const start = (page - 1) * limit;
+  const paginatedPosts = allPosts.slice(start, start + limit);
+
+  return {
+    posts: paginatedPosts,
+    total: allPosts.length,
+  };
 }
 
 export async function getPostBySlug(slug: string) {
   const posts = await getAllPosts();
-  const post = posts.find((post) => post.slug === slug);
+  const post = posts.posts.find((post) => post.slug === slug);
 
   if (!post) {
     return null;

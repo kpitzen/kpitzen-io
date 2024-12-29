@@ -2,7 +2,7 @@ import { NavBar } from "@/components/navbar";
 import { getAllPosts } from "@/lib/blog";
 import { Footer } from "@/components/footer";
 import { TagFilter } from "@/components/TagFilter";
-import { BlogPosts } from "@/components/BlogPosts";
+import { InfiniteBlogPosts } from "@/components/InfiniteBlogPosts";
 
 interface BlogPageProps {
   searchParams: Promise<{ tags?: string | string[] }>
@@ -11,7 +11,7 @@ interface BlogPageProps {
 export const revalidate = 3600; // Revalidate every hour
 
 export default async function Blog({ searchParams }: BlogPageProps) {
-  const posts = await getAllPosts();
+  const { posts, total } = await getAllPosts(1); // Get first page
   const { tags } = await searchParams;
   const selectedTags = Array.isArray(tags) 
     ? tags 
@@ -38,7 +38,11 @@ export default async function Blog({ searchParams }: BlogPageProps) {
         </div>
 
         <TagFilter tags={allTags} selectedTags={selectedTags} />
-        <BlogPosts posts={posts} selectedTags={selectedTags} />
+        <InfiniteBlogPosts 
+          initialPosts={posts} 
+          totalPosts={total} 
+          selectedTags={selectedTags}
+        />
       </main>
       <Footer />
     </div>

@@ -8,3 +8,8 @@ export interface BlogPost {
   canonicalUrl?: string;
   ogImage?: string;
 }
+
+export interface PaginatedPosts {
+  posts: BlogPost[];
+  total: number;
+}

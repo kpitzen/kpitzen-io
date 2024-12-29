@@ -33,7 +33,7 @@ refractor.register(go);
 
 // Generate static params for all posts
 export async function generateStaticParams() {
-  const posts = await getAllPosts();
+  const { posts } = await getAllPosts();
   return posts.map((post) => ({
     slug: post.slug,
   }));
@@ -94,7 +94,7 @@ export default async function BlogPost({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const posts = await getAllPosts();
+  const { posts } = await getAllPosts();
   const currentPostIndex = posts.findIndex(post => post.slug === slug);
   const post = await getPostBySlug(slug);
 
