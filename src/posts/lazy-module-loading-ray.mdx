@@ -1,0 +1,88 @@
+---
+title: "Lazy module-loading in Ray for faster deployment times"
+date: "2025-02-10T00:02:00-06:00"
+description: "How we sped up our Ray deployments"
+tags: ["retrospective", "kubernetes", "pulumi", "kuberay"]
+---
+
+Ray is a distributed system designed to execute parallel workloads efficiently. However, as deployments scale, the default module-loading strategy in Ray can slow down the rollout process. 
+
+### Ray’s default deployment flow
+
+In a typical Ray deployment, RayService handles new application definitions by initiating a multi-step process:
+
+1. **RayService receives a new application definition,** which includes a container image tag or digest.
+2. **The Ray head actor pulls the container image** and resolves the deployment handle based on the `importPath` defined in the config.
+3. **The head actor dispatches actor creation requests** to worker nodes, which then also **pull the container image** to run the processes.
+
+This flow results in three full image transfers:
+
+- **Push to the container registry** when an image is built.
+- **Pull to the Ray head node.**
+- **Concurrent pulls to worker nodes.**
+
+### Deployment times and scaling challenges
+
+When the system was relatively small, the whole deployment loop took about 10-15 minutes, improved from an hour thanks to previous optimizations like distributed image building with buildkit and Pulumi. However, as the number of models and deployments increased, the time ballooned to 20-30 minutes. This made the end-to-end process—from local code change to deployment on Ray—almost an hour, which was unacceptable for development iteration.
+
+The issue was further compounded by:
+
+- **Frequent changes to code or models,** requiring repeated builds, pushes, and pulls of container images.
+- **Redundant transfers,** even when only minor code changes occurred.
+
+A more efficient strategy was needed if we wanted to shorten up the development and deployment loop - there was very little wiggle room in the existing deploy flow.
+
+Before arriving at our final solution, we explored two alternatives:
+
+**1. Optimizing `.dockerignore` Files**
+
+One potential solution was to carefully curate `.dockerignore` files to reduce image sizes and speed up builds. This approach would also require refactoring the codebase to separate unrelated components, minimizing unnecessary rebuilds.
+
+- **Pros:** It could reduce build times by limiting the amount of code included in each container image.
+- **Cons:** This solution required substantial refactoring, would be error-prone, and still wouldn’t address redundant image pulls across the cluster.
+
+**2. Shared filesystem mounts with code loading via webhooks**
+
+We also considered using shared filesystem mounts where code changes would be pulled in real-time via webhooks.
+
+- **Pros:** It would enable quick updates to code without a full image rebuild.
+- **Cons:** This approach was complex to set up, required additional infrastructure for file synchronization, and didn’t align well with our existing Kubernetes-based deployment model.
+
+## Our solution
+
+We implemented **lazy module-loading** by decoupling runtime code from the container images, which involved two main components: a **Ray worker script** and a **Google Cloud Storage (GCS) artifact** for dynamic code loading.
+
+**1. Ray worker script**
+
+We modified the Ray worker startup script to allow it to dynamically pull and load code artifacts at runtime.
+
+- Instead of bundling all code within the container image, we pre-defined a lightweight base container that was responsible for bootstrapping the environment.
+- During the worker node initialization, the script would pull the latest version of the application code from a remote source (e.g., GCS, S3, or similar object storage) and load it into the Ray runtime.
+
+Specifically, the code block added to the default worker was this:
+
+```python
+    gcp_client = storage.Client()
+    bucket = gcp_client.bucket(os.getenv("BUCKET_NAME"))
+    source_code_path = os.getenv("SOURCE_CODE_PATH")
+    source_code_file = f"{source_code_path}-{content_hash}.tar.gz" if content_hash else source_code_path
+    logging.log(logging.WARNING, f"downloading source code from {source_code_file}")
+    destination_path = Path(site.getsitepackages()[0]) / "sb_models"
+    parent_path = destination_path.parent
+    sys.path.extend([str(parent_path), str(destination_path)])
+    logging.log(logging.WARNING, f"Extracting source code to {destination_path}")
+    blob = bucket.blob(source_code_file)
+    blob.download_to_filename("/tmp/code_artifact.zip")
+    with ZipFile("/tmp/code_artifact.zip", "r") as zip_ref:
+        os.makedirs(destination_path, exist_ok=True)
+        zip_ref.extractall(destination_path)
+
+```
+
+**2. GCS artifact for code loading**
+
+The deployment workflow shifted from container-based updates to code artifact-based updates:
+
+- Code artifacts were packaged and uploaded to Google Cloud Storage (GCS) as compressed files containing only the code that needed to be run.
+- The Ray deployment configuration specified a code hash that represented the artifact version, allowing updates to be made by changing the code hash in the deployment manifest.
+- The worker script would fetch the code artifact from GCS, extract it, and import it at runtime. This eliminated the need for container rebuilds, pushes, and pulls for code changes.

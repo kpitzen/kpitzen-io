@@ -94,7 +94,7 @@ export default async function BlogPost({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { posts } = await getAllPosts();
+  const { posts } = await getAllPosts(1, 10000);
   const currentPostIndex = posts.findIndex(post => post.slug === slug);
   const post = await getPostBySlug(slug);
 

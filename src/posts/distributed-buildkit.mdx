@@ -1,0 +1,96 @@
+---
+title: "Distributed image building with buildkit and Pulumi"
+date: "2025-02-10T00:01:00-06:00"
+description: "How we sped up our Docker builds"
+tags: ["kubernetes", "pulumi", "docker"]
+---
+
+In the very first version of our system, Docker builds initiated by Pulumi were executed on the deployment machine itself, whether that was a developer's local environment or a remote Pulumi Deployment machine. This meant that all available compute and network resources were limited to the machine running `pulumi up`.
+
+This setup is manageable for small projects with simple Docker images. However, it becomes problematic when scaling up systems, such as distributed computing frameworks like Ray, which often rely on numerous custom images. Some of these images can be quite large—e.g., pre-baking model weights in containers for inference.
+
+In our case, we managed several dozen images, each of which had unique build requirements for different ML models and their associated serving environments. A single `pulumi up` execution could exceed an hour, primarily spent building these images and pushing them to a container registry. 
+
+To maintain high engineering velocity and speed up deployment, we needed a distributed, parallelized solution for Docker image building—one that could use resources beyond the machine executing the Pulumi command. 
+
+Enter Buildkit: a new backend for Docker, designed to enhance the image-building process by making it faster and more efficient. Buildkit enables:
+
+- **Parallel builds:** executing multiple build stages concurrently, significantly reducing build times.
+- **Fine-grained caching**: enabling efficient reuse of previously built layers.
+- **Remote builders**: One of Buildkit's most valuable features for our use case is the concept of remote builders, allowing image builds to be offloaded to external systems.
+
+Buildkit supports various builders, each distinguished by its driver. The most relevant drivers for our scenario were:
+
+- **Remote driver:** Allows for distributed builds on remote Buildkit servers, eliminating the need to use local resources for complex image builds.
+- **Kubernetes driver:** While Kubernetes-based builds are supported, we opted against using this driver directly because our infrastructure is managed declaratively through Pulumi, making it redundant to create Kubernetes pods through imperative commands.
+
+Pulumi, our Infrastructure-as-Code (IaC) tool of choice, can manage distributed builders via its `docker-build` provider. Pulumi’s integration with Buildkit allows builds to be offloaded to remote Buildkit services, speeding up the deployment process. The Pulumi implementation consists of two key parts:
+
+1. **Infrastructure definition:** This is where the Buildkit service is deployed on Kubernetes, complete with all required resources like TLS certificates, Ingress controllers, and IAM roles.
+2. **Build execution:** Pulumi uses the `docker-build` provider to send build commands to the remote Buildkit instance, rather than executing them locally. This approach not only speeds up the process but also reduces the load on the deployment machine.
+
+## Setting up the infrastructure
+
+To set up remote Buildkit builders using Pulumi, you’ll need the following infrastructure components:
+
+**1. Kubernetes Cluster**: a working Kubernetes environment, such as GKE, EKS, or AKS.
+
+**2. Buildkit Deployment on Kubernetes**
+
+- Deploy the Buildkit service as a set of pods running on Kubernetes.
+- Implement Horizontal Pod Autoscaling (HPA) for the Buildkit deployment to ensure scalability and responsiveness.
+
+**3. Security Configuration**
+
+- **IAM Roles (for GCP/GKE):** Set up IAM roles to manage access control for the Buildkit deployment.
+- **Certificate Issuer:** Use cert-manager to manage the TLS certificates required for mTLS between the Buildkit client and server.
+- **TLS Certificates:** Ensure secure communication by implementing mTLS with generated TLS certificates.
+
+**4. Networking Setup**
+
+- **Service:** Expose the Buildkit service within the cluster.
+- **Ingress:** Configure an Ingress controller to allow external access to the Buildkit service with the necessary security measures.
+
+## Using the infrastructure
+
+Once the infrastructure is set up, you can begin using the distributed Buildkit builders both locally and within Pulumi deployments.
+
+**1. Configure a remote builder**
+
+- Start by configuring Docker to use the remote Buildkit builder:
+    
+    ```bash
+    export DOCKER_BUILDKIT=1
+    docker buildx create --name mybuilder --driver remote --driver-opt="env.BUILDKIT_HOST=tcp://<buildkit-host>:<port>"
+    docker buildx use mybuilder
+    ```
+    
+- This sets up a new builder instance that points to the remote Buildkit service deployed on Kubernetes.
+
+**2. Using the remote builder via Docker CLI**
+
+- Build Docker images using the remote Buildkit builder:
+    
+    ```bash
+    docker buildx build --builder mybuilder -t <image-name> -f <Dockerfile> .
+    ```
+    
+- This command sends the build context to the remote Buildkit service, leveraging its distributed nature to speed up the build.
+
+**3. Use the remote builder in Pulumi**
+
+- Pulumi's `docker-build` provider can be configured to use the remote Buildkit builder:
+    
+    ```tsx
+    import * as docker from "@pulumi/docker";
+    
+    const image = new docker.Image("my-image", {
+        imageName: "<image-name>",
+        build: {
+            context: ".",
+            builder: "mybuilder",
+        },
+    });
+    ```
+    
+- This configuration tells Pulumi to use the remote Buildkit service, enabling faster and more scalable image builds during `pulumi up`.

@@ -1,0 +1,94 @@
+---
+title: "Canary deployments in a KubeRay cluster"
+date: "2025-02-10T00:03:00-06:00"
+description: "How we rolled out new RayServe instances with zero downtime"
+tags: ["kubernetes", "kuberay", "ray"]
+---
+
+In Kubernetes, deploying new versions of applications without downtime is critical, especially for production workloads that serve external users. Canary deployments, which allow for gradual rollout and testing of changes, are a common strategy to ensure that new updates are safe before being rolled out to all users. However, handling canary deployments with Ray, a distributed system for machine learning and other parallel workloads, introduces additional complexities.
+
+## Ray’s default deployment strategy
+
+RayServe, the serving framework for Ray, and RayCluster, the basic unit of Ray’s Kubernetes deployment, are designed to be treated like standard Kubernetes pods. The KubeRay operator handles scaling and replacing clusters as configurations change, ensuring that workloads remain distributed and scalable.
+
+Ray's default deployment strategy, which involves spinning up a new cluster alongside the existing one and updating the RayServe configuration for both, works well in research settings where downtime is acceptable. In these environments, users expect some level of instability, making it feasible to manage temporary outages.
+
+However, in production environments where Ray serves as a real-time inference platform, downtime is unacceptable. When Ray is part of a larger business-critical system with distributed users, strict control is required over how and when new code is deployed. The deployment strategy must ensure that:
+
+- There is zero downtime during transitions.
+- Traffic is routed seamlessly from old to new deployments.
+- Rollbacks can occur automatically in case of failures.
+
+Given these requirements, we needed to explore ways to extend Ray’s native deployment logic to better support canary rollouts.
+
+## Key assumptions in our solution
+
+The canary deployment solution we developed assumes certain conditions about the cluster environment and ingress setup:
+
+1. We used Ambassador as the ingress controller. Other ingress solutions could also work, but our infrastructure had already standardized on Ambassador before the need for this deployment strategy arose.
+2. Our Kubernetes cluster was GPU-constrained, meaning that there wasn’t enough capacity to run two full copies of each Ray cluster side-by-side. While Ray’s default strategy of replacing old clusters with new ones would be sufficient in environments with ample GPU resources, our goal was to maximize GPU availability for users, leaving virtually no overhead.
+3. The operators and users of our Ray infrastructure required near-zero disruption to traffic. While some level of downtime might be acceptable for non-critical applications like research labs or test environments, we were running a live service that supported regular automated jobs from distributed users. As such, the deployment needed to be as smooth as possible, with rollbacks in case of errors.
+
+## Implementation details
+
+To enable canary deployments, we developed a custom reconciliation loop that manages the rollout of new RayServe instances alongside existing ones, gradually transitioning traffic from old to new deployments.
+
+### 1. **Reconciliation loop initialization**
+
+The reconciliation loop starts by measuring the sizes of all worker groups and Ray applications in both the old and new RayService manifests. This provides a baseline for scaling up and down throughout the canary process.
+
+### 2. **User-defined deployment strategy**
+
+Operators can specify a deployment strategy in terms of “steps,” which define:
+
+- **Scaling:** How much to scale up the new infrastructure and down the old.
+- **Wait times:** How long to wait at each step to ensure service readiness and health.
+- **Health checks:** Periodic checks to confirm that the system is stable before progressing to the next step.
+
+### 3. **Color-based namespace isolation**
+
+We generate a new “color” from a fixed list to represent the canary deployment. The new deployment is created with this color as a namespace aid, and the following configurations are applied:
+
+- **Scaled-to-zero deployment:** A scaled-to-zero version of the desired manifest is deployed initially. This allows the head node to build and register the application definitions before provisioning any worker nodes. This "preloading" limits the actual deployment time—when real traffic is routed to both services.
+- **Weight 0 Ambassador mappings:** Ingress mappings are set to weight 0, preventing any traffic from reaching the new cluster initially.
+
+### 4. **Preloading and rollback mechanisms**
+
+The new deployment is preloaded with application definitions, and if any build fails to complete within the defined timeout, the entire process rolls back. This approach:
+
+- Prevents any user requests from hitting erroneous code paths.
+- Ensures that the deployment does not proceed with partially built or failed applications.
+
+### 5. **Executing the deployment steps**
+
+For each defined step:
+
+- The new cluster is scaled up, and the old cluster is scaled down according to the defined step size.
+- Traffic weights are adjusted in Ambassador to begin directing a portion of user requests to the new deployment.
+- During the wait period, Prometheus and other health metrics are monitored to ensure the system is stable.
+    - If any health check fails, the deployment is immediately rolled back.
+    - If all checks pass, the loop moves to the next step.
+
+### 6. **Final transition**
+
+Once the deployment is fully switched to the new version:
+
+- The old Ray cluster and Ambassador mappings are destroyed.
+- All traffic is now directed to the new deployment.
+
+## Areas for future work
+
+While this implementation proved to be quite effective in production, we planned to make these improvements in the future:
+
+**1. Improved health checks**
+
+Adding more sophisticated health checks during the deployment process could improve resilience to failure. Examples include deeper integration with Ray metrics and more granular monitoring of pod health.
+
+**2. Moving to a custom Kubernetes operator**
+
+Currently, the canary deployment process is managed by a script that runs during manual deployments. Moving this logic to a Kubernetes operator would allow the reconciliation loop to run as a standard Kubernetes process, making it more automated and aligned with Kubernetes' native handling of custom resources.
+
+- This would involve creating a new custom resource, such as `RayServeDeployment`, to manage `RayService` objects.
+- The operator could then handle continuous reconciliation, monitoring, and scaling, reducing the need for manual intervention.
+
+By extending Ray’s native deployment logic, we achieved seamless canary rollouts with minimal downtime and robust rollback mechanisms. As Ray evolves, more native support for advanced deployment strategies may emerge. But until then, custom solutions like this one can help ensure smooth, resilient updates in production environments where downtime is not an option.

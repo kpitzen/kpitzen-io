@@ -47,12 +47,29 @@ export async function getAllPosts(page: number = 1, limit: number = 5) {
 }
 
 export async function getPostBySlug(slug: string) {
-  const posts = await getAllPosts();
-  const post = posts.posts.find((post) => post.slug === slug);
+  const filePath = path.join(postsDirectory, `${slug}.mdx`);
+  const mdFilePath = path.join(postsDirectory, `${slug}.md`);
 
-  if (!post) {
+  let fullPath: string;
+  if (fs.existsSync(filePath)) {
+    fullPath = filePath;
+  } else if (fs.existsSync(mdFilePath)) {
+    fullPath = mdFilePath;
+  } else {
     return null;
   }
+
+  const fileContents = fs.readFileSync(fullPath, "utf8");
+  const { data, content } = matter(fileContents);
+
+  const post: BlogPost = {
+    slug,
+    title: data.title,
+    date: data.date,
+    description: data.description || "",
+    content: content || "",
+    tags: data.tags || [],
+  };
 
   const processedContent = await unified()
     .use(remarkParse)

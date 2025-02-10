@@ -1,0 +1,77 @@
+---
+title: "RayServe on GKE with Pulumi"
+date: "2025-02-10T00:00:00-06:00"
+description: "Serving inference at scale on heterogeneous compute"
+tags: ["ai", "retrospective", "kubernetes", "pulumi"]
+---
+
+Serving inference at scale on heterogeneous compute is a non-trivial task. In this post, we cover the basics of our setup, and some of the problems we solved to get there.
+
+### Our cluster
+
+All computation was performed on a compute cluster that we built and maintained. This heterogeneous cluster consisted of various types and sizes of machines with different configurations of GPUs and other resources, all running in Google Kubernetes Engine (GKE). We chose GKE because we believe it to be the best cloud provider for Kubernetes workloads available today.
+
+Kubernetes managed the machines and applications deployed onto them, but the real magic on the compute side came from RayServe. Developed by the Ray team at Anyscale, RayServe allows these heterogeneous machines to make their resources available to a shared pool of workers. These workers handle caching, scheduling, deployments, and inter-process communication (IPC) between processes. Minimizing IPC latency and maximizing resource usage across the cluster were key goals for us, alongside offering a sensible API.
+
+To better understand RayServe, it’s beneficial to familiarize yourself with both the Ray Core and RayServe documentation. Essentially, RayServe enables relatively hands-off management of Ray clusters and the applications deployed to them. When everything is running smoothly, this system works wonderfully, offering perhaps the easiest method for self-hosting models—or any Python-based application, especially those that are offline or not business-critical—in Kubernetes.
+
+### Ray from an infra perspective
+
+From a software standpoint, Ray offers a straightforward value proposition: distributed computation with clear abstractions around data transport, caching, deployments, placement, and other performance-enhancing optimizations that make it easier to build performant systems of heterogeneous compute pipelines.
+
+From an infrastructure perspective, however, it’s a simpler proposition. KubeRay is a small set of Custom Resource Definitions (CRDs) that manage running the Ray binaries—in head and worker modes—in pods within a Kubernetes cluster, with the ability to specify standard pod specification attributes. Essentially, it’s an extension of the Deployment resource in the apps API, with a couple of caveats:
+
+- It doesn’t fully adhere to the Deployment spec, as RayService manages both the RayCluster resource and the applications, jobs, etc., being deployed to that cluster.
+- This means that existing scaling and deployment resources are not compatible with RayService, hence the need for a separate operator.
+
+### Supporting systems for Ray
+
+To operate Ray as a consumer service, several important pieces of infrastructure should be deployed alongside a production Ray cluster, along with supporting Kubernetes objects to enable Ray to access the underlying physical hardware within the cluster.
+
+**NVIDIA GPU Operator**
+
+The NVIDIA GPU Operator manages GPU drivers for NVIDIA devices across a cluster. We chose to deploy it as a DaemonSet, ensuring drivers were up-to-date across all nodes in our cluster. Integrating this with Ray, especially when using the containerized runtime environment, proved to be a challenge. 
+
+**Ingress and authentication**
+
+By default, Ray assumes it exists within a trusted environment, which works well if all access to Ray is happening within a given Virtual Private Cloud (VPC) by trusted sources. However, for any public consumption of Ray deployments, it’s likely that teams will want to safeguard those deployments against attacks. We implemented specific ingress and authentication mechanisms to secure our deployments.
+
+**Distributed Observability in Ray**
+
+Ray does not offer robust observability features out of the box. Logging is disaggregated and difficult to find—for example, locating all logs for a given deployment requires clicking through individual replicas. Dashboards are disabled by default until Grafana is configured with the precise dashboards required by Ray, and Ray is configured to read from Grafana. Lower-level system logging is often invisible outside of file system access and is buried deep within the logs. We addressed these challenges by implementing distributed observability in Ray, enhancing our ability to monitor and troubleshoot the system effectively. 
+
+### Challenges with Ray in live service applications
+
+While RayServe offers significant benefits, there are several considerations for teams using Ray for live service applications. Below are some of the key challenges we faced and how we addressed them.
+
+**Observability**
+
+Ray lacks robust observability features out of the box. Disaggregated logging and disabled dashboards make monitoring and debugging difficult. For instance, finding all logs for a deployment requires manually accessing each replica.
+
+We developed a [distributed observability framework within Ray](/blog/posts/distributed-observability-ray) to aggregate logs and metrics, making them accessible and actionable. This involved configuring Grafana dashboards and integrating logging systems to collect and analyze logs from all replicas and components. 
+
+**Reliability**
+
+We encountered several hard-to-reproduce and unrecoverable failure modes in Ray. Often, restarting the head pod in Kubernetes would resolve issues. Problems like an overloaded Redis cluster—especially when using high-availability features in Ray—could cause Ray to behave erratically. Minor disruptions could lead to a lack of access to the RayServe API needed to manage deployments. These issues were not self-detected, not alertable, and not self-correcting, making Ray high-maintenance until the underlying problem was resolved.
+
+To improve reliability, we hosted a separate, dedicated Redis cluster with more resources than initially anticipated to back the Global Control Store (GCS). We also implemented monitoring to detect issues early and automated recovery processes where possible. This proactive approach reduced downtime and improved system stability.
+
+**Feature support**
+
+Some features expected of containerized applications are either poorly supported or non-existent in Ray. Deploying a containerized application in RayServe is still experimental, despite being an effective method for deploying heterogeneous workloads. Maintaining the union of all Python dependencies across all deployments is challenging—sometimes impossible—due to the diversity of ML model codebases and their dependencies. It’s desirable to package each application into its own container with its own dependencies rather than relying on Python’s dependency tooling.
+
+We opted to package each application into its own container with its own dependencies, improving testability and reducing conflicts. While virtual environments could potentially address dependency issues, they are less testable than containerized actors. Although this feature exists in Ray, it primarily works with GPU-accelerated workloads and requires extra effort from the operator. 
+
+**Deployment upgrades**
+
+The KubeRay operator works well for small changes to a RayService when resources are unlimited. However, its rollout strategy is too simplistic for larger changes or in resource-constrained environments. Any changes other than modifying Ray application definitions or adding worker node groups cause a full replacement of the underlying RayCluster, with no incremental rollout strategies available. The operator waits for the new cluster to become fully available before destroying the old cluster, which can lead to downtime.
+
+We developed strategies to [handle canary deployments with Custom Resources (CRs) in Kubernetes](/blog/posts/canary-deployments-ray). This allowed us to perform incremental rollouts, testing new changes on a subset of the cluster before full deployment. 
+
+### How Pulumi made it easier
+
+Pulumi played a significant role in simplifying our infrastructure management. Pulumi allows engineers to write infrastructure code across multiple providers in their preferred programming languages. Unlike Terraform, which requires learning a special domain-specific language (DSL), Pulumi lets anyone familiar with Python, TypeScript, Go, Java, or .NET install the CLI and start provisioning infrastructure.
+
+Since language intrinsics can be used directly in Pulumi programs, it becomes trivial to define a GKE cluster and then a Kubernetes provider to operate within that cluster, or to define a Docker image and then use that image’s digest in Kubernetes manifests. This kind of operation is much harder in Terraform.
+
+Pulumi also offers excellent secrets management across environments out of the box and for free. Pulumi’s ESC (Environments, Secrets, and Configuration) can be used by any Pulumi organization to easily store sensitive values and retrieve them at deployment time.
