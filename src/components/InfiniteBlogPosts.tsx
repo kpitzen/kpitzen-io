@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { BlogPost } from '@/types';
 import Link from 'next/link';
@@ -11,13 +11,43 @@ interface InfiniteBlogPostsProps {
   selectedTags: string[];
 }
 
-export function InfiniteBlogPosts({ initialPosts, totalPosts, selectedTags }: InfiniteBlogPostsProps) {
+export function InfiniteBlogPosts({ initialPosts, totalPosts: initialTotalPosts, selectedTags }: InfiniteBlogPostsProps) {
   const [posts, setPosts] = useState<BlogPost[]>(initialPosts);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [totalPosts, setTotalPosts] = useState(initialTotalPosts);
   const { ref, inView } = useInView();
 
-  const loadMorePosts = async () => {
+  useEffect(() => {
+    const fetchFilteredPosts = async () => {
+      setLoading(true);
+      const searchParams = new URLSearchParams();
+      searchParams.append('page', '1');
+      selectedTags.forEach(tag => searchParams.append('tags', tag));
+
+      try {
+        const response = await fetch(`/api/posts?${searchParams.toString()}`);
+        const data = await response.json();
+        setPosts(data.posts);
+        setTotalPosts(data.total);
+        setPage(1);
+      } catch (error) {
+        console.error('Error loading filtered posts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (selectedTags.length > 0) {
+      fetchFilteredPosts();
+    } else {
+      setPosts(initialPosts);
+      setTotalPosts(initialTotalPosts);
+      setPage(1);
+    }
+  }, [selectedTags, initialPosts, initialTotalPosts]);
+
+  const loadMorePosts = useCallback(async () => {
     if (loading || posts.length >= totalPosts) return;
     
     setLoading(true);
@@ -29,6 +59,10 @@ export function InfiniteBlogPosts({ initialPosts, totalPosts, selectedTags }: In
     try {
       const response = await fetch(`/api/posts?${searchParams.toString()}`);
       const data = await response.json();
+      if (!data.posts || data.posts.length === 0) {
+        setTotalPosts(posts.length);
+        return;
+      }
       setPosts(prev => [...prev, ...data.posts]);
       setPage(nextPage);
     } catch (error) {
@@ -36,7 +70,7 @@ export function InfiniteBlogPosts({ initialPosts, totalPosts, selectedTags }: In
     } finally {
       setLoading(false);
     }
-  };
+  }, [loading, posts.length, page, selectedTags, totalPosts]);
 
   useEffect(() => {
     if (inView) {

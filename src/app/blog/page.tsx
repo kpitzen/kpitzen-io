@@ -12,6 +12,7 @@ export const revalidate = 3600; // Revalidate every hour
 
 export default async function Blog({ searchParams }: BlogPageProps) {
   const { posts, total } = await getAllPosts(1); // Get first page
+  const { posts: allPosts } = await getAllPosts(1, 10000);
   const { tags } = await searchParams;
   const selectedTags = Array.isArray(tags) 
     ? tags 
@@ -20,7 +21,7 @@ export default async function Blog({ searchParams }: BlogPageProps) {
       : [];
 
   const allTags = Array.from(
-    new Set(posts.flatMap((post) => post.tags))
+    new Set(allPosts.flatMap((post) => post.tags))
   ).sort();
 
   return (
