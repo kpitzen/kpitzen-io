@@ -1,0 +1,90 @@
+---
+title: "NVIDIA GPU Operator and Ray"
+date: "2025-02-10T00:05:00-06:00"
+description: "How we integrated GPUs with Containerized Ray Applications in Kubernetes"
+tags: ["kubernetes", "ray", "gpu", "nvidia", "retrospective", "substrate"]
+---
+
+Integrating GPU resources with Ray in Kubernetes environments can be challenging, especially when it involves managing complex interactions between Ray’s containerized deployments and NVIDIA’s runtime tooling, including the Container Toolkit (CTK) and Container Device Interface (CDI). In this post, we'll explore the challenges we faced while trying to make GPUs accessible to Ray worker nodes in a Google Kubernetes Engine (GKE) cluster using the NVIDIA GPU Operator.
+
+It’s worth noting that the following solution might have been prompted by a misinterpretation of the interactions between Ray's container management and NVIDIA’s GPU runtime tools, specifically CTK and CDI. The default configurations failed to work out of the box, so we developed a workaround to ensure that Ray's containerized workloads could effectively access the GPUs on our GKE cluster.
+
+## What Was the Problem?
+
+### Limited GPU Access with Default Configuration
+
+Installing the NVIDIA GPU Operator as a DaemonSet in our Kubernetes cluster seemed like a straightforward approach to making GPUs available. However, when combined with Ray's default configuration for managing containers, we found that the Podman containers provisioned by Ray could not access the underlying GPUs on our GKE nodes.
+
+### DaemonSets and CDI Specifications
+
+The GPU Operator typically runs as a DaemonSet, meaning that device specifications like CDI are applied at the node level. However, we required more granular control over GPU partitioning in our Ray infrastructure:
+
+- **In production systems:** It's generally a best practice to allocate all of a node’s GPUs to a single Ray worker pod, maximizing the compute power available to each node.
+- **In development environments:** We needed to create smaller, individualized Ray clusters for each engineer, with only a single GPU exposed to each Ray worker pod.
+
+### The Mismatch in CDI Exposures
+
+Even if the CDI specifications were correctly exposed to the Podman containers (which wasn’t the default case), the Ray workers incorrectly assumed they had access to all the GPUs on the node. This led to issues such as:
+
+- Unbound devices that were supposed to be available.
+- Low-level runtime errors, which were hard to trace and diagnose.
+
+## How Did We Solve It?
+
+We implemented a two-pronged solution to address the problem: using init containers to generate pod-specific CDI specifications and configuring RayCluster to expose the correct number of GPUs via the NVIDIA container runtime.
+
+### 1. **Init Containers for CDI Specification Generation**
+
+- **Why:** Init containers were added to each Ray pod to generate a pod-specific CDI specification.
+- **How:** The init container would run at the start of each Ray worker pod, reading the number of GPUs allocated via Kubernetes annotations and generating a CDI specification that reflected only those GPUs.
+- **Result:** This ensured that the CDI specs were unique to each Ray worker pod, avoiding the previous issue of workers believing they had access to all GPUs on the node.
+
+### 2. **RayCluster-Level Configuration for GPU Exposure**
+
+- **Why:** We needed to ensure that the RayCluster CRD was configured to expose the correct number of GPUs per worker pod.
+- **How:** Ray's container runtime was set to use the NVIDIA container runtime, ensuring that the specified number of GPUs were visible within the containers.
+- **Result:** The Ray workers only accessed the GPUs allocated to them by Kubernetes, making GPU partitioning uniform and predictable.
+
+## What Were the Benefits of This Solution?
+
+This approach delivered a consistent and reliable method of partitioning GPUs across Ray worker nodes, offering the following benefits:
+
+### 1. **Uniform GPU Partitioning**
+
+- **Kubernetes Primitives:** The solution leverages Kubernetes’ native resource management capabilities to allocate GPUs, making the setup predictable and consistent across environments.
+- **Pod-Specific CDI Specs:** Each Ray worker pod generated its CDI spec based on the allocated GPUs, preventing conflicts and ensuring accurate resource utilization.
+
+### 2. **Granular Control Over GPU Allocation**
+
+- The solution offered flexibility in specifying the number of GPUs available to each Ray worker node, which was essential for development environments with minimal resources.
+
+### 3. **Improved GPU Visibility**
+
+- Ray workers could now correctly see and use only the GPUs allocated to them, reducing errors and increasing reliability in GPU-based computations.
+
+## What Were the Tradeoffs?
+
+This solution wasn’t without its tradeoffs. Managing the GPU integration introduced some complexities:
+
+### 1. **Dual Specifications (CDI and CTK)**
+
+- We had to handle two different GPU specifications simultaneously: CDI for the Kubernetes node-level access and CTK for container-level access.
+- **Challenge:** This dual-spec management made debugging more complex, especially given the container-in-container setup in Ray. The obscurity inherent to such setups made troubleshooting more time-consuming.
+
+### 2. **Obscurity in Container-in-Container Workloads**
+
+- The layering of containers (Podman inside Kubernetes pods) created additional levels of indirection, making it difficult to track the exact path of GPU resources.
+- **Time-Consuming Debugging:** Issues like unbound devices or misconfigured specs could manifest as obscure runtime errors, requiring in-depth exploration to resolve.
+
+## What Would Be the Ideal Case?
+
+While the solution was effective, a more ideal scenario would involve modifying Ray’s container runtime itself:
+
+### 1. **Use of Containerd Instead of Podman**
+
+- **Why:** Containerd supports NVIDIA’s CTK natively, providing better compatibility and flexibility for GPU management.
+- **Expected Benefits:** Using Containerd could have allowed Ray to better align with the GPU Operator’s requirements and prevent much of the workaround we implemented. It would have likely made the container-in-container setup unnecessary, simplifying the architecture and reducing the overhead of managing CDI and CTK together.
+
+Integrating GPUs with Ray using the NVIDIA GPU Operator required some workarounds due to default incompatibilities, but our solution provided effective and predictable GPU partitioning across Ray worker nodes in Kubernetes. Despite the complexities of managing both CDI and CTK specs, the solution offered the flexibility needed for both production and development environments.
+
+While there’s room for improvement—particularly in Ray’s choice of container runtime—this solution serves as a practical approach for managing GPU resources in distributed Ray deployments. As Ray continues to evolve, we anticipate better native support for GPU runtimes, hopefully making setups like this one easier to implement and maintain.
